@@ -1,5 +1,8 @@
 import Head from 'next/head'
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { render, unmountComponentAtNode } from 'react-dom'
+import MultiButton from '../components/multi-button'
+import ToastElement from '../components/toast'
 import styles from '../styles/Home.module.css'
 
 const deEscapeHTML = (unsafe: string): string => {
@@ -37,6 +40,19 @@ export default function Home() {
   const [resultValue, setResultValue] = useState("");
   const [message, setMessage] = useState("");
 
+  useEffect(() => {
+    if (message) {
+      const interval = setInterval(() => {
+        unmountComponentAtNode(document.getElementById("toast"))
+        setMessage("")
+      }, 1250)
+      render(<ToastElement message={message} />, document.getElementById("toast"))
+      return () => {
+        clearInterval(interval)
+      }
+    }
+  }, [message])
+
   const convertValue = () => {
     try {
     const validJson = JSON.parse(editableValue);
@@ -58,14 +74,16 @@ export default function Home() {
   }
 
   const copyText = (): void => {
-    navigator.clipboard.writeText(resultValue).then(
-      () => {
-        setMessage("Copied!!");
-      },
-      () => {
-        setMessage("Copy fail!!");
-      }
-    )
+    if (resultValue) {
+      navigator.clipboard.writeText(resultValue).then(
+        () => {
+          setMessage("Copied!!");
+        },
+        () => {
+          setMessage("Copy fail!!");
+        }
+      )
+    }
   }
 
   return (
@@ -89,17 +107,20 @@ export default function Home() {
 
         <div className={styles.grid}>
 
-          <button
-            onClick={convertValue}
-          >
-            JSON to HTML
-          </button>
+          <MultiButton>
+            <button
+              onClick={convertValue}
+            >
+              JSON to HTML
+            </button>
+            <button
+              onClick={sconvertValue}
+            >
+              HTML to JSON
+            </button>
+          </MultiButton>
 
-          <button
-            onClick={sconvertValue}
-          >
-            HTML to JSON
-          </button>
+          
 
           <div className={styles.card}>
             <textarea
@@ -109,8 +130,9 @@ export default function Home() {
             />
           </div>
           <div className={styles.card}>
-            <button onClick={copyText}>Copy</button>
-            <span>{message}</span>
+            <MultiButton>
+              <button onClick={copyText}>Copy</button>
+            </MultiButton>
             <textarea
               tabIndex={-1}
               disabled
@@ -121,6 +143,7 @@ export default function Home() {
           </div>
 
         </div>
+        <section id="toast" />
       </main>
 
       <footer className={styles.footer}>
